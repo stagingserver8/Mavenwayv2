@@ -29,9 +29,27 @@
 		053373032D22053D00619630 /* Mavenwayv2UITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Mavenwayv2UITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		052ACDF52D22E190007DA3A9 /* Exceptions for "Mavenwayv2" folder in "Mavenwayv2" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 053372E82D22053A00619630 /* Mavenwayv2 */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		052ACDEF2D22DEFC007DA3A9 /* New Folder */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "New Folder";
+			sourceTree = "<group>";
+		};
 		053372EB2D22053A00619630 /* Mavenwayv2 */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				052ACDF52D22E190007DA3A9 /* Exceptions for "Mavenwayv2" folder in "Mavenwayv2" target */,
+			);
 			path = Mavenwayv2;
 			sourceTree = "<group>";
 		};
@@ -75,6 +93,7 @@
 		053372E02D22053A00619630 = {
 			isa = PBXGroup;
 			children = (
+				052ACDEF2D22DEFC007DA3A9 /* New Folder */,
 				053372EB2D22053A00619630 /* Mavenwayv2 */,
 				053372FC2D22053D00619630 /* Mavenwayv2Tests */,
 				053373062D22053D00619630 /* Mavenwayv2UITests */,
@@ -108,6 +127,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				052ACDEF2D22DEFC007DA3A9 /* New Folder */,
 				053372EB2D22053A00619630 /* Mavenwayv2 */,
 			);
 			name = Mavenwayv2;
@@ -397,8 +417,9 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Mavenwayv2/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Mavenwayv2/Info.plist;
+				"INFOPLIST_FILE[sdk=*]" = Mavenwayv2/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -425,8 +446,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Mavenwayv2/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Mavenwayv2/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";

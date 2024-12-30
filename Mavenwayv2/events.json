@@ -1,0 +1,30 @@
+[
+  {
+    "name": "MENA DAY3",
+    "host": "Citi",
+    "city": "London",
+    "dateFrom": "2024-12-31",
+    "dateTo": "2024-12-31",
+    "category": "Sport"
+  },
+
+  {
+    "name": "Turkey DAY2",
+    "host": "Goldman Sachs",
+    "city": "London",
+    "dateFrom": "2025-01-24",
+    "dateTo": "2025-01-25",
+    "category": "Sport"
+  },
+  
+  {
+    "name": "MENA DAY2",
+    "host": "Citi",
+    "city": "London",
+    "dateFrom": "2025-02-02",
+    "dateTo": "2025-02-02",
+    "category": "Sport"
+  }
+  
+  
+]
