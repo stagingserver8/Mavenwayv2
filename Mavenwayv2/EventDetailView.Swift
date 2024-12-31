@@ -1,8 +1,11 @@
+
+
 import SwiftUI
 import EventKit
 
 struct EventDetailView: View {
     @Binding var event: Event
+    @State private var showingSafari = false
     @State private var showingCalendarAlert = false
     @State private var calendarError: String?
     let eventStore = EKEventStore()
@@ -11,7 +14,6 @@ struct EventDetailView: View {
         VStack(alignment: .leading, spacing: 16) {
             // Top row with calendar icon, title, and action buttons
             HStack(alignment: .top) {
-                // Calendar Icon
                 VStack(spacing: 0) {
                     Text(formatMonth(event.dateFrom))
                         .font(.caption2)
@@ -36,13 +38,11 @@ struct EventDetailView: View {
                 )
                 
                 VStack(alignment: .leading, spacing: 8) {
-                    // Event Name
                     Text(event.name)
                         .font(.title2)
                         .bold()
                         .padding(.bottom, 4)
                     
-                    // Stacked details
                     Text(formatDates(from: event.dateFrom, to: event.dateTo))
                         .foregroundColor(.gray)
                     
@@ -68,7 +68,6 @@ struct EventDetailView: View {
                 
                 Spacer()
                 
-                // Action buttons in a single row
                 HStack(spacing: 16) {
                     Button(action: {
                         addToCalendar()
@@ -80,14 +79,8 @@ struct EventDetailView: View {
                     
                     Button(action: {
                         event.starred.toggle()
-                        // Add debug prints
                         print("Star toggled for event: \(event.id), New starred status: \(event.starred)")
                         EventManager.shared.updateEvent(event)
-                        // Verify the update
-                        let savedEvents = EventManager.shared.loadEvents()
-                        if let savedEvent = savedEvents.first(where: { $0.id == event.id }) {
-                            print("Verified saved status: \(savedEvent.starred)")
-                        }
                     }) {
                         Image(systemName: event.starred ? "star.fill" : "star")
                             .foregroundColor(event.starred ? .yellow : .gray)
@@ -97,6 +90,24 @@ struct EventDetailView: View {
             }
             
             Spacer()
+
+            // View Agenda Button
+            if let link = event.link, !link.isEmpty, let url = URL(string: link) {
+                Button(action: {
+                    showingSafari = true // Show the SafariView
+                }) {
+                    Text("View Agenda")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(Color.blue)
+                        .cornerRadius(8)
+                }
+                .sheet(isPresented: $showingSafari) {
+                    SafariView(url: url) // Present SafariView as a sheet
+                }
+            }
         }
         .padding()
         .navigationTitle("Event Details")
@@ -106,6 +117,8 @@ struct EventDetailView: View {
             Text(calendarError ?? "Unknown error occurred")
         }
     }
+
+    // Emd
     
     
     private func formatMonth(_ dateString: String) -> String {
