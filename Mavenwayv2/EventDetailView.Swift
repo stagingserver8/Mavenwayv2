@@ -1,18 +1,21 @@
-
-
 import SwiftUI
 import EventKit
 
 struct EventDetailView: View {
     @Binding var event: Event
+    @State private var isStarred: Bool
     @State private var showingSafari = false
     @State private var showingCalendarAlert = false
     @State private var calendarError: String?
     let eventStore = EKEventStore()
+    
+    init(event: Binding<Event>) {
+        self._event = event
+        self._isStarred = State(initialValue: event.wrappedValue.starred)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Top row with calendar icon, title, and action buttons
             HStack(alignment: .top) {
                 VStack(spacing: 0) {
                     Text(formatMonth(event.dateFrom))
@@ -78,23 +81,22 @@ struct EventDetailView: View {
                     }
                     
                     Button(action: {
-                        event.starred.toggle()
+                        isStarred.toggle()
+                        event.starred = isStarred
                     }) {
-                        Image(systemName: event.starred ? "star.fill" : "star")
-                            .foregroundColor(event.starred ? .yellow : .gray)
+                        Image(systemName: isStarred ? "star.fill" : "star")
+                            .foregroundColor(isStarred ? .yellow : .gray)
                             .font(.title2)
                     }
-                    
-                    
+                    .buttonStyle(BorderlessButtonStyle())
                 }
             }
             
             Spacer()
 
-            // View Agenda Button
             if let link = event.link, !link.isEmpty, let url = URL(string: link) {
                 Button(action: {
-                    showingSafari = true // Show the SafariView
+                    showingSafari = true
                 }) {
                     Text("View Agenda")
                         .font(.headline)
@@ -105,7 +107,7 @@ struct EventDetailView: View {
                         .cornerRadius(8)
                 }
                 .sheet(isPresented: $showingSafari) {
-                    SafariView(url: url) // Present SafariView as a sheet
+                    SafariView(url: url)
                 }
             }
         }
@@ -116,10 +118,12 @@ struct EventDetailView: View {
         } message: {
             Text(calendarError ?? "Unknown error occurred")
         }
+        .onChange(of: event.starred) { newValue in
+            if isStarred != newValue {
+                isStarred = newValue
+            }
+        }
     }
-
-    // Emd
-    
     
     private func formatMonth(_ dateString: String) -> String {
         let formatter = DateFormatter()
@@ -210,7 +214,6 @@ struct EventDetailView: View {
             Category: \(event.category ?? "Not Specified")
             """
             
-            // Set the event's calendar to the default calendar
             if let defaultCalendar = eventStore.defaultCalendarForNewEvents {
                 newEvent.calendar = defaultCalendar
             } else {
@@ -240,6 +243,4 @@ struct EventDetailView: View {
             }
         }
     }
-
 }
-

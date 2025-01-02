@@ -1,5 +1,8 @@
+import Foundation
+import SwiftUI
+
 struct Event: Codable, Identifiable, Equatable {
-    let id: String  // Changed to String to match MongoDB _id
+    let id: String
     let name: String
     let host: String
     let city: String
@@ -14,12 +17,14 @@ struct Event: Codable, Identifiable, Equatable {
             EventManager.shared.isEventStarred(id)
         }
         set {
-            EventManager.shared.toggleEventStarred(id)
+            if newValue != EventManager.shared.isEventStarred(id) {
+                EventManager.shared.toggleEventStarred(id)
+            }
         }
     }
 
     enum CodingKeys: String, CodingKey {
-        case id = "_id"  // Map to MongoDB's _id
+        case id = "_id"
         case name
         case host
         case city
@@ -27,7 +32,6 @@ struct Event: Codable, Identifiable, Equatable {
         case dateTo
         case category
         case link
-        // Remove starred from CodingKeys since it's now computed
     }
 
     init(from decoder: Decoder) throws {
@@ -40,10 +44,8 @@ struct Event: Codable, Identifiable, Equatable {
         dateTo = try container.decode(String.self, forKey: .dateTo)
         category = try container.decodeIfPresent(String.self, forKey: .category)
         link = try container.decodeIfPresent(String.self, forKey: .link)
-        // Remove starred initialization since it's now computed
     }
 
-    // Custom encode implementation to exclude starred
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
@@ -54,18 +56,5 @@ struct Event: Codable, Identifiable, Equatable {
         try container.encode(dateTo, forKey: .dateTo)
         try container.encodeIfPresent(category, forKey: .category)
         try container.encodeIfPresent(link, forKey: .link)
-    }
-
-    // Update Equatable conformance
-    static func == (lhs: Event, rhs: Event) -> Bool {
-        return lhs.id == rhs.id &&
-               lhs.name == rhs.name &&
-               lhs.host == rhs.host &&
-               lhs.city == rhs.city &&
-               lhs.dateFrom == rhs.dateFrom &&
-               lhs.dateTo == rhs.dateTo &&
-               lhs.category == rhs.category &&
-               lhs.link == rhs.link &&
-               lhs.starred == rhs.starred
     }
 }

@@ -1,3 +1,5 @@
+import SwiftUI
+
 enum DateFilter: String, CaseIterable {
     case all = "All"
     case thisMonth = "This Month"
@@ -5,16 +7,13 @@ enum DateFilter: String, CaseIterable {
     case starred = "Starred"
 }
 
-
-
-import SwiftUI
-
 struct ContentView: View {
-    @State private var events: [Event] = [] // All events loaded
-    @State private var filteredEvents: [Event] = [] // Events after applying filters
+    @State private var events: [Event] = []
+    @State private var filteredEvents: [Event] = []
     @State private var selectedDateFilter: DateFilter = .all
-    @State private var selectedCity: String? = nil // Use nil to represent "City"
-    @State private var selectedCategory: String? = nil // Use nil to represent "Category"
+    @State private var selectedCity: String? = nil
+    @State private var selectedCategory: String? = nil
+    @State private var needsRefresh = false
     
     var body: some View {
         NavigationView {
@@ -54,10 +53,50 @@ struct ContentView: View {
                 
                 // Events List with Pull-to-Refresh
                 List {
+                    
+                    if events.isEmpty {
+                            // Show nothing while initial loading
+                            EmptyView()
+                        } else if filteredEvents.isEmpty {
+                            VStack(spacing: 16) {
+                                Image(systemName: selectedDateFilter == .starred ? "star.circle" : "calendar")
+                                    .font(.system(size: 50))
+                                    .foregroundColor(.gray)
+                                    .padding(.top, 32)
+                                
+                                Text(selectedDateFilter == .starred ?
+                                    "No highlighted events" :
+                                    "No upcoming events")
+                                    .font(.headline)
+                                    .foregroundColor(.gray)
+                                
+                                Text(selectedDateFilter == .starred ?
+                                    "Star an event to see it here" :
+                                    "Check back later for new events")
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray.opacity(0.8))
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .listRowBackground(Color.clear)
+                     } else {
+                         ForEach(filteredEvents) { event in
+                             // Your existing event cell code...
+                         }
+                     }
+                    
+                    
+                    
                     ForEach(filteredEvents) { event in
-                        NavigationLink(
-                            destination: EventDetailView(event: binding(for: event))
-                        ) {
+                        ZStack {
+                            NavigationLink(
+                                destination: EventDetailView(event: binding(for: event))
+                            ) {
+                                EmptyView()
+                            }
+                            .opacity(0)
+                            
                             HStack(spacing: 16) {
                                 // Calendar Icon
                                 VStack(spacing: 0) {
@@ -91,19 +130,30 @@ struct ContentView: View {
                                         .font(.subheadline)
                                         .foregroundColor(.gray)
                                 }
+                                
                                 Spacer()
-                                if event.starred {
-                                    Image(systemName: "star.fill")
-                                        .foregroundColor(.yellow)
+                                
+                                // Star Button
+                                Button(action: {
+                                    var updatedEvent = event
+                                    updatedEvent.starred.toggle()
+                                    if let index = events.firstIndex(where: { $0.id == event.id }) {
+                                        events[index] = updatedEvent
+                                    }
+                                    applyFilters()
+                                    needsRefresh.toggle()
+                                }) {
+                                    Image(systemName: event.starred ? "star.fill" : "star")
+                                        .foregroundColor(event.starred ? .yellow : .gray)
+                                        .font(.system(size: 22))
                                 }
+                                .buttonStyle(BorderlessButtonStyle())
+                                .padding(.trailing, 8)
                             }
                         }
                     }
-                    
-                    
                 }
                 .refreshable {
-                    // This will be called when the user pulls to refresh
                     await refreshEvents()
                 }
             }
@@ -112,10 +162,10 @@ struct ContentView: View {
             .onChange(of: selectedDateFilter) { _ in applyFilters() }
             .onChange(of: selectedCity) { _ in applyFilters() }
             .onChange(of: selectedCategory) { _ in applyFilters() }
+            .onChange(of: needsRefresh) { _ in applyFilters() }
         }
     }
     
-    // New async function for refreshing events
     private func refreshEvents() async {
         guard let url = URL(string: "https://maven-backend-9df3af747893.herokuapp.com/events") else {
             print("Invalid URL")
@@ -126,8 +176,7 @@ struct ContentView: View {
             let (data, _) = try await URLSession.shared.data(from: url)
             let fetchedEvents = try JSONDecoder().decode([Event].self, from: data)
             
-            // Update the UI on the main thread
-            DispatchQueue.main.async {
+            await MainActor.run {
                 self.events = fetchedEvents
                 self.applyFilters()
             }
@@ -136,23 +185,21 @@ struct ContentView: View {
         }
     }
 
-    
     private func binding(for event: Event) -> Binding<Event> {
         guard let index = events.firstIndex(where: { $0.id == event.id }) else {
             fatalError("Event not found")
         }
         return Binding(
-            get: { self.events[index] },
+            get: { events[index] },
             set: { newValue in
-                self.events[index] = newValue
-                self.applyFilters() // Just reapply filters to update the UI
+                events[index] = newValue
+                applyFilters()
+                needsRefresh.toggle()
             }
         )
     }
 
-
     private func applyFilters() {
-        // Start with all events
         let today = Date()
         filteredEvents = events
 
@@ -180,15 +227,15 @@ struct ContentView: View {
             }
         }
 
-        // Sort chronologically by `dateFrom`
+        // Sort chronologically
         filteredEvents.sort {
-            guard let date1 = dateFromString($0.dateFrom), let date2 = dateFromString($1.dateFrom) else {
+            guard let date1 = dateFromString($0.dateFrom),
+                  let date2 = dateFromString($1.dateFrom) else {
                 return false
             }
             return date1 < date2
         }
     }
-
 
     private func filterByDate(events: [Event], filter: DateFilter) -> [Event] {
         let today = Date()
@@ -206,7 +253,7 @@ struct ContentView: View {
                     return calendar.isDate(eventDate, equalTo: nextMonth, toGranularity: .month)
                 }
                 return false
-            default:
+            case .starred:
                 return true
             }
         }
@@ -226,7 +273,7 @@ struct ContentView: View {
             return
         }
 
-        let task = URLSession.shared.dataTask(with: url) { data, response, error in
+        URLSession.shared.dataTask(with: url) { data, response, error in
             if let error = error {
                 print("Error fetching events: \(error)")
                 return
@@ -240,7 +287,6 @@ struct ContentView: View {
             do {
                 let fetchedEvents = try JSONDecoder().decode([Event].self, from: data)
                 
-                // Update the UI on the main thread
                 DispatchQueue.main.async {
                     self.events = fetchedEvents
                     self.applyFilters()
@@ -248,12 +294,8 @@ struct ContentView: View {
             } catch {
                 print("Error decoding events: \(error)")
             }
-        }
-
-        task.resume()
+        }.resume()
     }
-
-
 
     private func dateFromString(_ dateString: String) -> Date? {
         let formatter = DateFormatter()

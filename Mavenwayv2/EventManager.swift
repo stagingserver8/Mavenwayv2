@@ -1,10 +1,5 @@
-//
-//  EventsManager.swift
-//  Mavenwayv2
-//
-//  Created by Michal Chojnacki on 30/12/2024.
-
 import Foundation
+
 class EventManager {
     static let shared = EventManager()
     private let starredEventsKey = "starredEventIds"
