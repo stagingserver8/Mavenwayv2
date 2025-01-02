@@ -1,6 +1,3 @@
-import SwiftUI
-
-// Date Filter Enum
 enum DateFilter: String, CaseIterable {
     case all = "All"
     case thisMonth = "This Month"
@@ -8,7 +5,10 @@ enum DateFilter: String, CaseIterable {
     case starred = "Starred"
 }
 
-// Main ContentView
+
+
+import SwiftUI
+
 struct ContentView: View {
     @State private var events: [Event] = [] // All events loaded
     @State private var filteredEvents: [Event] = [] // Events after applying filters
@@ -52,7 +52,7 @@ struct ContentView: View {
                     .padding(.horizontal)
                 }
                 
-                // Events List
+                // Events List with Pull-to-Refresh
                 List {
                     ForEach(filteredEvents) { event in
                         NavigationLink(
@@ -99,6 +99,12 @@ struct ContentView: View {
                             }
                         }
                     }
+                    
+                    
+                }
+                .refreshable {
+                    // This will be called when the user pulls to refresh
+                    await refreshEvents()
                 }
             }
             .onAppear(perform: loadEvents)
@@ -109,6 +115,28 @@ struct ContentView: View {
         }
     }
     
+    // New async function for refreshing events
+    private func refreshEvents() async {
+        guard let url = URL(string: "https://maven-backend-9df3af747893.herokuapp.com/events") else {
+            print("Invalid URL")
+            return
+        }
+
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            let fetchedEvents = try JSONDecoder().decode([Event].self, from: data)
+            
+            // Update the UI on the main thread
+            DispatchQueue.main.async {
+                self.events = fetchedEvents
+                self.applyFilters()
+            }
+        } catch {
+            print("Error refreshing events: \(error)")
+        }
+    }
+
+    
     private func binding(for event: Event) -> Binding<Event> {
         guard let index = events.firstIndex(where: { $0.id == event.id }) else {
             fatalError("Event not found")
@@ -117,12 +145,10 @@ struct ContentView: View {
             get: { self.events[index] },
             set: { newValue in
                 self.events[index] = newValue
-                EventManager.shared.saveEvents(self.events) // Save updated events to UserDefaults
-                self.applyFilters()
+                self.applyFilters() // Just reapply filters to update the UI
             }
         )
     }
-
 
 
     private func applyFilters() {
@@ -195,42 +221,39 @@ struct ContentView: View {
     }
 
     private func loadEvents() {
-        // First load saved events from UserDefaults
-        let savedEvents = EventManager.shared.loadEvents()
-        
-        // Then try to load events from JSON
-        if let url = Bundle.main.url(forResource: "events", withExtension: "json") {
-            do {
-                let data = try Data(contentsOf: url)
-                var jsonEvents = try JSONDecoder().decode([Event].self, from: data)
-                
-                // If we have saved events, preserve their starred states
-                if !savedEvents.isEmpty {
-                    // Update JSON events with saved starred states
-                    jsonEvents = jsonEvents.map { jsonEvent in
-                        if let savedEvent = savedEvents.first(where: { $0.name == jsonEvent.name && $0.dateFrom == jsonEvent.dateFrom }) {
-                            var updatedEvent = jsonEvent
-                            updatedEvent.starred = savedEvent.starred
-                            return updatedEvent
-                        }
-                        return jsonEvent
-                    }
-                }
-                
-                events = jsonEvents
-                EventManager.shared.saveEvents(events)
-            } catch {
-                print("Error loading events from JSON: \(error)")
-                // Fallback to saved events if JSON loading fails
-                events = savedEvents
-            }
-        } else {
-            // If no JSON file exists, use saved events
-            events = savedEvents
+        guard let url = URL(string: "https://maven-backend-9df3af747893.herokuapp.com/events") else {
+            print("Invalid URL")
+            return
         }
-        
-        applyFilters()
+
+        let task = URLSession.shared.dataTask(with: url) { data, response, error in
+            if let error = error {
+                print("Error fetching events: \(error)")
+                return
+            }
+
+            guard let data = data else {
+                print("No data returned")
+                return
+            }
+
+            do {
+                let fetchedEvents = try JSONDecoder().decode([Event].self, from: data)
+                
+                // Update the UI on the main thread
+                DispatchQueue.main.async {
+                    self.events = fetchedEvents
+                    self.applyFilters()
+                }
+            } catch {
+                print("Error decoding events: \(error)")
+            }
+        }
+
+        task.resume()
     }
+
+
 
     private func dateFromString(_ dateString: String) -> Date? {
         let formatter = DateFormatter()

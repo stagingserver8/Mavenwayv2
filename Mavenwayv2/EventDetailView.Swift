@@ -79,13 +79,13 @@ struct EventDetailView: View {
                     
                     Button(action: {
                         event.starred.toggle()
-                        print("Star toggled for event: \(event.id), New starred status: \(event.starred)")
-                        EventManager.shared.updateEvent(event)
                     }) {
                         Image(systemName: event.starred ? "star.fill" : "star")
                             .foregroundColor(event.starred ? .yellow : .gray)
                             .font(.title2)
                     }
+                    
+                    
                 }
             }
             
